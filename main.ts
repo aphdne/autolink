@@ -7,14 +7,14 @@ function toLink(link: string, display: string = link) {
 export default class Autolink extends Plugin {
 	async onload() {
 		this.registerMarkdownPostProcessor((el, ctx) => {
-			if (!el.hasClass("el-p"))
+			if (!el.hasClass("el-p")) // exclude links, headers, etc.
 				return
 
 			this.app.vault.getMarkdownFiles().reverse().forEach((mdf) => {
 				// https://regex101.com/r/iMlLME/1
 				let re  = `(${mdf.basename}(?<=\<a.*\>.*)(?=.*\<\/a\>)`; // capture items within a <a*> and </a>
 				    re += `|${mdf.basename}(?<=\<a[^\>]*)(?=[^\<]*\>)` // capture items within a <a> tag
-				    re += `)|(${mdf.basename})` // separate other matches into another capture group, which does not include tags or headers
+				    re += `)|(${mdf.basename}[es]?s?[ed]?d?)` // separate other matches into another capture group, including plurals -s & -es and -e & -ed
 				const matches = [...el.innerHTML.matchAll(new RegExp(re.replace("\\", "\\\\"), "gmi"))];
 
 				if (matches.length == 0 || this.app.workspace.activeEditor.file == mdf)
