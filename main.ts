@@ -11,13 +11,19 @@ export default class Autolink extends Plugin {
 				return
 
 			this.app.vault.getMarkdownFiles().reverse().forEach((mdf) => {
-				// https://regex101.com/r/xBzjHB/1
-				const matches = [...el.innerHTML.matchAll(new RegExp(`(?<!\\<a\\>)${mdf.basename}(?!.*\\<\\/a\\>)`, "gmi"))];
-				if (matches.length == 0)
+				// https://regex101.com/r/iMlLME/1
+				let re  = `(${mdf.basename}(?<=\<a.*\>.*)(?=.*\<\/a\>)`; // capture items within a <a*> and </a>
+				    re += `|${mdf.basename}(?<=\<a[^\>]*)(?=[^\<]*\>)` // capture items within a <a> tag
+				    re += `)|(${mdf.basename})` // separate other matches into another capture group, which does not include tags or headers
+				const matches = [...el.innerHTML.matchAll(new RegExp(re.replace("\\", "\\\\"), "gmi"))];
+
+				if (matches.length == 0 || this.app.workspace.activeEditor.file == mdf)
 					return;
 
 				for (const m of matches) {
-					el.innerHTML = el.innerHTML.replaceAll(m[0], toLink(m[0]));
+					if (m[2]) {
+						el.innerHTML = el.innerHTML.replaceAll(m[2], toLink(m[2]));
+					}
 				}
 			});
 		});
