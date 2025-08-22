@@ -3,17 +3,18 @@ import { RangeSetBuilder } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import { Plugin } from 'obsidian';
 
+// BUG: user-inserted HTML elements cause out of range codemirror6 error
+
+// generic regex to grab a keyword within markdown, excluding links, headers, tags, and including variants of the keyword with -ed, -d, -s, and -es suffixes
+function getPlainRegex(keyword: string) {
+	// https://regex101.com/r/9eA7Sl/5
+	// 1st capture group captures $term within wikilinks, to filter them out
+	// 2nd capture group captures $term, except for within headers and tags, and including with an -ed, -es, or -s suffix to allow for plurals etc.
+	const re  = `(?<=\\[\\[.*)${keyword}(?![^\\]\\]]*\\[\\[)(?=.*\\]\\])|((?<!\\#|^\\|.*|^\\#.*)\\b${keyword}[es]?s?[ed]?\\b)`;
+	return new RegExp(re, "gmi");
+}
+
 function registerExtension(plugin: Plugin) {
-	class AutolinkWidget extends WidgetType {
-		toDOM(view: EditorView): HTMLElement {
-			const div = document.createElement('span');
-
-			div.innerText = '👉';
-
-			return div;
-		}
-	}
-
 	class AutolinkExtension implements PluginValue {
 		decorations: DecorationSet;
 		markdownFiles: TFile[];
@@ -45,12 +46,8 @@ function registerExtension(plugin: Plugin) {
 						const text = view.state.doc.sliceString(node.from, node.to);
 
 						let matches = [];
-						// https://regex101.com/r/9eA7Sl/5
-						// 1st capture group captures $term within wikilinks, to filter them out
-						// 2nd capture group captures $term, except for within headers and tags, and including with an -ed, -es, or -s suffix to allow for plurals etc.
 						markdownFiles.forEach((mdf) => {
-							const re  = `(?<=\\[\\[.*)${mdf.basename}(?![^\\]\\]]*\\[\\[)(?=.*\\]\\])|((?<!\\#|^\\|.*|^\\#.*)\\b${mdf.basename}[es]?s?[ed]?\\b)`;
-							const links = [...text.matchAll(new RegExp(re, "gmi"))];
+							const links = [...text.matchAll(getPlainRegex(mdf.basename))];
 							links.forEach((link) => {
 								if (link[1]) {
 									matches.push({ name: mdf.basename, link: link});
@@ -139,8 +136,7 @@ export default class Autolink extends Plugin {
 						// https://regex101.com/r/9eA7Sl/5
 						// 1st capture group captures $term within wikilinks, to filter them out
 						// 2nd capture group captures $term, except for within headers and tags, and including with an -ed, -es, or -s suffix to allow for plurals etc.
-						const re  = `(?<=\\[\\[.*)${term}(?![^\\]\\]]*\\[\\[)(?=.*\\]\\])|((?<!\\#|^\\|.*|^\\#.*)\\b${term}[es]?s?[ed]?\\b)`;
-						const matches = [...line.matchAll(new RegExp(re, "gmi"))].reverse();
+						const matches = [...line.matchAll(getPlainRegex(term))].reverse();
 
 						if (matches.length == 0 || this.app.workspace.activeEditor.file == mdf)
 							return;
