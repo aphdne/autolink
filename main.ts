@@ -22,7 +22,7 @@ export default class Autolink extends Plugin {
 
 				for (const m of matches) {
 					if (m[2]) {
-						el.innerHTML = el.innerHTML.replaceAll(m[2], toLink(m[2]));
+						el.innerHTML = el.innerHTML.replaceAll(m[2], toLink(mdf.basename, m[2]));
 					}
 				}
 			});
