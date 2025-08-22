@@ -88,10 +88,6 @@ function registerExtension(plugin: Plugin) {
 	plugin.registerEditorExtension(ViewPlugin.fromClass(AutolinkExtension, pluginSpec));
 }
 
-function toLink(link: string, display: string = link) {
-	return `<a data-href="${link}" href="${link}" class="internal-link autolink-link" target="_blank" rel="noopener nofollow">${display}</a>`;
-}
-
 export default class Autolink extends Plugin {
 	async onload() {
 		registerExtension(this);
@@ -112,7 +108,7 @@ export default class Autolink extends Plugin {
 
 				for (const m of matches) {
 					if (m[2]) {
-						el.innerHTML = el.innerHTML.replaceAll(m[2], toLink(mdf.basename, m[2]));
+						el.innerHTML = el.innerHTML.replaceAll(m[2], `<a data-href="${mdf.basename}" href="${mdf.basename}" class="internal-link autolink-link" target="_blank" rel="noopener nofollow">${m[2]}</a>`;
 					}
 				}
 			});
