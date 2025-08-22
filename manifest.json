@@ -1,7 +1,7 @@
 {
 	"id": "autolink",
 	"name": "Autolink",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "Automatically link notes and/or headers, destructively or non-destructively",
 	"author": "aphdne",

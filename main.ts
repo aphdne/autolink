@@ -90,8 +90,6 @@ function registerExtension(plugin: Plugin) {
 
 export default class Autolink extends Plugin {
 	async onload() {
-		registerExtension(this);
-
 		this.registerMarkdownPostProcessor((el, ctx) => {
 			if (!el.hasClass("el-p")) // exclude links, headers, etc.
 				return
@@ -108,7 +106,7 @@ export default class Autolink extends Plugin {
 
 				for (const m of matches) {
 					if (m[2]) {
-						el.innerHTML = el.innerHTML.replaceAll(m[2], `<a data-href="${mdf.basename}" href="${mdf.basename}" class="internal-link autolink-link" target="_blank" rel="noopener nofollow">${m[2]}</a>`;
+						el.innerHTML = el.innerHTML.replaceAll(m[2], `<a data-href="${mdf.basename}" href="${mdf.basename}" class="internal-link autolink-link" target="_blank" rel="noopener nofollow">${m[2]}</a>`);
 					}
 				}
 			});
@@ -160,6 +158,12 @@ export default class Autolink extends Plugin {
 				}
 			}
 		});
+
+		// this.registerEvent(this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, info) => {
+		// 	console.log(menu);
+		// }));
+
+		registerExtension(this);
 	}
 
 	onunload() {
