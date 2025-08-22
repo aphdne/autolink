@@ -3,6 +3,8 @@ import { RangeSetBuilder } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import { Plugin } from 'obsidian';
 
+// TODO: work with file aliases
+// TODO: headings feature
 // BUG: user-inserted HTML elements cause out of range codemirror6 error
 
 // generic regex to grab a keyword within markdown, excluding links, headers, tags, and including variants of the keyword with -ed, -d, -s, and -es suffixes
@@ -10,6 +12,7 @@ function getPlainRegex(keyword: string) {
 	// https://regex101.com/r/9eA7Sl/5
 	// 1st capture group captures $term within wikilinks, to filter them out
 	// 2nd capture group captures $term, except for within headers and tags, and including with an -ed, -es, or -s suffix to allow for plurals etc.
+	keyword = keyword.replaceAll("+", "\\+");
 	const re  = `(?<=\\[\\[.*)${keyword}(?![^\\]\\]]*\\[\\[)(?=.*\\]\\])|((?<!\\#|^\\|.*|^\\#.*)\\b${keyword}[es]?s?[ed]?\\b)`;
 	return new RegExp(re, "gmi");
 }
@@ -30,7 +33,8 @@ function registerExtension(plugin: Plugin) {
 			}
 		}
 
-		destroy() {}
+		destroy() {
+		}
 
 		buildDecorations(view: EditorView): DecorationSet {
 			const builder = new RangeSetBuilder<Decoration>();
@@ -93,9 +97,10 @@ export default class Autolink extends Plugin {
 
 			this.app.vault.getMarkdownFiles().reverse().forEach((mdf) => {
 				// https://regex101.com/r/iMlLME/1
-				let re  = `(${mdf.basename}(?<=\<a.*\>.*)(?=.*\<\/a\>)`; // capture items within a <a*> and </a>
-				    re += `|${mdf.basename}(?<=\<a[^\>]*)(?=[^\<]*\>)` // capture items within a <a> tag
-				    re += `)|(${mdf.basename}[es]?s?[ed]?d?)` // separate other matches into another capture group, including plurals -s & -es and -e & -ed
+				const name = mdf.basename.replaceAll("+", "\\+");
+				let re  = `(${name}(?<=\<a.*\>.*)(?=.*\<\/a\>)`; // capture items within a <a*> and </a>
+				    re += `|${name}(?<=\<a[^\>]*)(?=[^\<]*\>)` // capture items within a <a> tag
+				    re += `)|(${name}[es]?s?[ed]?d?)` // separate other matches into another capture group, including plurals -s & -es and -e & -ed
 				const matches = [...el.innerHTML.matchAll(new RegExp(re.replace("\\", "\\\\"), "gmi"))];
 
 				if (matches.length == 0 || this.app.workspace.activeEditor.file == mdf)
