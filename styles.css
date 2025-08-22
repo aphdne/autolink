@@ -1,3 +1,9 @@
 .autolink-link {
 	color: var(--color-cyan) !important;
 }
+
+.autolink-link:hover {
+	color: var(--link-color-hover) !important;
+	text-decoration-color: var(--link-color-hover) !important;
+ 	text-decoration-line: var(--link-decoration-hover) !important;
+}
