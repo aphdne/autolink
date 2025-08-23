@@ -96,10 +96,14 @@ export default class Autolink extends Plugin {
 				return
 
 			this.app.vault.getMarkdownFiles().reverse().forEach((mdf) => {
-				// https://regex101.com/r/iMlLME/1
+				if (this.app.workspace.activeEditor.file == mdf)
+					return;
+				// https://regex101.com/r/uNwlc1/1
 				const name = mdf.basename.replaceAll("+", "\\+");
-				let re = `(${name}(?<=\\<a[^\\>]*))|(\\b${name}\\b)`;
-				el.innerHTML = el.innerHTML.replace(new RegExp(re, "gmi"), "<a>$2</a>");
+				let re = `\\b(${name}(?<!\\<[^\\>]*))\\b`;
+				console.log(el.innerHTML);
+				el.innerHTML = el.innerHTML.replace(new RegExp(re, "gmi"), "<a href='$1' data-href='$1' class='internal-link autolink-link'>$1</a>");
+				console.log(el.innerHTML);
 			});
 		});
 
