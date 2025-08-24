@@ -66,9 +66,9 @@ export default class Autolink extends Plugin {
 				if (this.app.workspace.activeEditor.file == mdf)
 					return;
 
-				// https://regex101.com/r/uNwlc1/1
+				// https://regex101.com/r/uNwlc1/3
 				const name = mdf.basename.replaceAll("+", "\\+").replaceAll("#", "\\#");
-				let re = `\\b(${name}(?<!\\<[^\\>]*))\\b`;
+				let re = `\\b((?<!\\>.*)${name}(?<!\\<[^\\>]*))\\b`
 				el.innerHTML = el.innerHTML.replace(new RegExp(re, "gmi"), "<a href='$1' data-href='$1' class='internal-link autolink-link'>$1</a>");
 			});
 		});
