@@ -52,8 +52,14 @@ export default class Autolink extends Plugin {
 			if (!el.hasClass("el-p")) // exclude links, headers, etc.
 				return
 
+			const fm = this.app.metadataCache.getFileCache(this.app.workspace.activeEditor.file).frontmatter;
 			this.app.vault.getMarkdownFiles().reverse().forEach((mdf) => {
-				const fm = this.app.metadataCache.getFileCache(this.app.workspace.activeEditor.file).frontmatter;
+				const mdf_fm = this.app.metadataCache.getFileCache(mdf).frontmatter;
+
+				let aliases = [];
+				if (mdf_fm && mdf_fm.aliases) {
+					aliases = mdf_fm.aliases
+				}
 
 				if (fm) {
 					for (const term of this.fmBlacklist) {
@@ -68,8 +74,14 @@ export default class Autolink extends Plugin {
 
 				// https://regex101.com/r/uNwlc1/3
 				const name = mdf.basename.replaceAll("+", "\\+").replaceAll("#", "\\#");
-				let re = `\\b((?<!\\>.*)${name}(?<!\\<[^\\>]*))\\b`
-				el.innerHTML = el.innerHTML.replace(new RegExp(re, "gmi"), "<a href='$1' data-href='$1' class='internal-link autolink-link'>$1</a>");
+
+				let re = `\\b((?<!\\<a.*\\>)${name}(?<!\\<[^\\>]*))\\b`
+				el.innerHTML = el.innerHTML.replace(new RegExp(re, "gmi"), `<a href='$1' data-href='$1' class='internal-link autolink-link'>$1</a>`);
+
+				for (const a of aliases) {
+					re = `\\b((?<!\\<a.*\\>)${a}(?<!\\<[^\\>]*))\\b`
+					el.innerHTML = el.innerHTML.replace(new RegExp(re, "gmi"), `<a href='${mdf.name}' data-href='${mdf.name}' class='internal-link autolink-link'>$1</a>`);
+				}
 			});
 		});
 
@@ -136,7 +148,6 @@ export default class Autolink extends Plugin {
 
 		this.fmBlacklist = [];
 		this.settings.fmBlacklist.replaceAll(" ", "").split(";").forEach((a) => this.fmBlacklist.push(a.toLowerCase().trim()));
-		console.log(this.fmBlacklist);
 	}
 
 	async saveSettings() {
