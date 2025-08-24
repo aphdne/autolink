@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { registerExtension } from './register_extension.ts';
 import { getPlainRegex } from './util.ts';
 
@@ -6,10 +6,48 @@ import { getPlainRegex } from './util.ts';
 // TODO: headings feature
 // BUG: user-inserted HTML elements cause out of range codemirror6 error
 
+interface Settings {
+	fmBlacklist: string;
+}
+
+const DEFAULT_SETTINGS: Partial<Settings> = {
+	fmBlacklist: "autolink-blacklist; ",
+}
+
+class SettingsTab extends PluginSettingTab {
+	plugin: Autolink;
+
+	constructor(app: App, plugin: Autolink) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		let { containerEl } = this;
+
+		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName("Blacklist properties")
+			.setDesc("Frontmatter properties to use as blacklists")
+			.addText((text) => {
+				text
+					.setPlaceholder("autolink-blacklist; ...")
+					.setValue(this.plugin.settings.fmBlacklist)
+					.onChange(async (value) => {
+						this.plugin.settings.fmBlacklist = value;
+						await this.plugin.saveSettings();
+					});
+			});
+	}
+}
+
 export default class Autolink extends Plugin {
-	fmblacklist: string[] = [];
+	fmBlacklist: string[] = [];
 
 	async onload() {
+		await this.loadSettings();
+
 		this.registerMarkdownPostProcessor((el, ctx) => {
 			if (!el.hasClass("el-p")) // exclude links, headers, etc.
 				return
@@ -17,12 +55,17 @@ export default class Autolink extends Plugin {
 			this.app.vault.getMarkdownFiles().reverse().forEach((mdf) => {
 				const fm = this.app.metadataCache.getFileCache(this.app.workspace.activeEditor.file).frontmatter;
 
-				if (fm && fm["parents"] && fm["parents"].includes("[[" + mdf.basename + "]]")) {
-					return
+				if (fm) {
+					for (const term of this.fmBlacklist) {
+						if (fm[term] && fm[term].includes("[[" + mdf.basename + "]]")) {
+							return
+						}
+					}
 				}
 
 				if (this.app.workspace.activeEditor.file == mdf)
 					return;
+
 				// https://regex101.com/r/uNwlc1/1
 				const name = mdf.basename.replaceAll("+", "\\+").replaceAll("#", "\\#");
 				let re = `\\b(${name}(?<!\\<[^\\>]*))\\b`;
@@ -73,6 +116,7 @@ export default class Autolink extends Plugin {
 
 					editor.setLine(i, line);
 				}
+
 			}
 		});
 
@@ -80,9 +124,23 @@ export default class Autolink extends Plugin {
 		// 	console.log(menu);
 		// }));
 
+		this.addSettingTab(new SettingsTab(this.app, this));
 		registerExtension(this);
 	}
 
 	onunload() {
+	}
+
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+		this.fmBlacklist = [];
+		this.settings.fmBlacklist.replaceAll(" ", "").split(";").forEach((a) => this.fmBlacklist.push(a.toLowerCase().trim()));
+		console.log(this.fmBlacklist);
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
+		this.loadSettings();
 	}
 }
